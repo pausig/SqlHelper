@@ -8,36 +8,6 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
 {
     public void Work()
     {
-        void InternalWork()
-        {
-            while (true)
-            {
-                WriteLine("Choose an operation: 1) Read All 2) Insert Note 3) Update Note 4) Delete Note 5) Exit");
-                var choice = ReadLine();
-
-                switch (choice)
-                {
-                    case "1":
-                        ReadAllNotes();
-                        break;
-                    case "2":
-                        InsertNote();
-                        break;
-                    case "3":
-                        UpdateNote();
-                        break;
-                    case "4":
-                        DeleteNoteWithConfirmation();
-                        break;
-                    case "5":
-                        return;
-                    default:
-                        WriteLine("Invalid choice. Please try again.");
-                        break;
-                }
-            }
-        }
-
         try
         {
             InternalWork();
@@ -51,46 +21,75 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
             WriteLine("An error occurred while executing the operation. {0}", e);
             throw;
         }
-    }
 
-    private void ReadAllNotes()
-    {
-        foreach (var note in database.ReadAllNotes())
+        return;
+
+        void InternalWork()
         {
-            WriteLine($"Id: {note.Id}, Note: {note.Note}, Expiring Date: {note.Inserted}");
+            while (true)
+            {
+                WriteLine("Choose an operation: 1) Read All 2) Insert Note 3) Update Note 4) Delete Note 5) Exit");
+                var choice = ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        Read();
+                        break;
+                    case "2":
+                        Insert();
+                        break;
+                    case "3":
+                        Update();
+                        break;
+                    case "4":
+                        Delete();
+                        break;
+                    case "5":
+                        return;
+                    default:
+                        WriteLine("Invalid choice. Please try again.");
+                        break;
+                }
+            }
         }
     }
 
-    private void InsertNote()
+    private void Read()
+    {
+        foreach (var note in database.Read()) WriteLine($"Id: {note.Id}, Note: {note.Note}, Expiring Date: {note.Inserted}");
+    }
+
+    private void Insert()
     {
         Write("Enter note: ");
         var note = ReadLine();
-        
+
         if (string.IsNullOrEmpty(note))
         {
             WriteLine("Note cannot be noll or empty.");
             return;
         }
-        
-        database.InsertNote(note);
+
+        database.Insert(note);
         WriteLine("Note inserted successfully.");
     }
 
-    private void UpdateNote()
+    private void Update()
     {
         Write("Enter note Id to update: ");
         if (int.TryParse(ReadLine(), out var id))
         {
             Write("Enter new note: ");
-            
+
             var note = ReadLine();
             if (string.IsNullOrEmpty(note))
             {
                 WriteLine("Note cannot be noll or empty.");
                 return;
             }
-            
-            database.UpdateNote(id, note);
+
+            database.Update(id, note);
             WriteLine("Note updated successfully.");
         }
         else
@@ -99,7 +98,7 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
         }
     }
 
-    private void DeleteNoteWithConfirmation()
+    private void Delete()
     {
         Write("Enter note Id to delete: ");
         if (int.TryParse(ReadLine(), out var id))
@@ -109,7 +108,7 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
 
             if (confirmation?.ToLower() == "yes")
             {
-                database.DeleteNoteWithConfirmation(id);
+                database.Delete(id);
                 WriteLine("Note deleted successfully.");
             }
             else
@@ -122,8 +121,8 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
             WriteLine("Invalid Id. Please enter a valid integer.");
         }
     }
+    
+    public async ValueTask DisposeAsync() => await database.DisposeAsync();
 
     public void Dispose() => database.Dispose();
-
-    public async ValueTask DisposeAsync() => await database.DisposeAsync();
 }
