@@ -25,7 +25,7 @@ public class Database : IDatabase
         using var command = new SqlCommand(query, connection);
         using var reader = command.ExecuteReader();
 
-        while (reader.Read()) yield return new MyNote(
+        while (reader.Read()) yield return new(
             reader.GetInt32(0), 
             reader.GetString(1), 
             reader.GetDateTimeOffset(2)
