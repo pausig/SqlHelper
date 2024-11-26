@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.Data.SqlClient;
 using SqlClient.Domain;
 using SqlClient.SeedWork;
@@ -72,7 +73,39 @@ public class Database(string connectionString) : IDatabase
         
         connection.Close();
     }
-    
+
+    public void MassiveInsert(ICollection<string> notes)
+    {
+        const string query = "INSERT INTO Notes (Note, Inserted) VALUES (@Note, @Inserted)";
+
+        connection.Open();
+        var time = DateTimeOffset.Now;
+        
+        var transaction = connection.BeginTransaction();
+        using var command = new SqlCommand(query, connection,transaction);
+        
+        try
+        {
+            command.Parameters.Add("@Note", SqlDbType.NVarChar);
+            command.Parameters.Add("@Inserted", SqlDbType.DateTimeOffset);
+            foreach (var note in notes)
+            {
+                command.Parameters["@Note"].Value = note;
+                command.Parameters["@Inserted"].Value = time;
+                command.ExecuteNonQuery();
+            }
+            
+            transaction.Commit();
+        }
+        catch (Exception e)
+        {
+            transaction.Rollback();
+        }
+       
+        connection.Close();
+        
+    }
+
     public async ValueTask DisposeAsync() => await connection.DisposeAsync();
 
     public void Dispose() => connection.Dispose();

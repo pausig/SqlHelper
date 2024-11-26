@@ -8,4 +8,5 @@ public interface IDatabase : IDisposable, IAsyncDisposable
     void Insert(string note);
     void Update(int id, string note);
     void Delete(int id);
+    void MassiveInsert(ICollection<string> notes);
 }
