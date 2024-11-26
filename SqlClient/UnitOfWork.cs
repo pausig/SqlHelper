@@ -1,62 +1,125 @@
+using Microsoft.Data.SqlClient;
 using SqlClient.SeedWork;
+using static System.Console;
 
 namespace SqlClient;
 
 public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
 {
-    public void ReadAllNotes()
+    public void Work()
+    {
+        void InternalWork()
+        {
+            while (true)
+            {
+                WriteLine("Choose an operation: 1) Read All 2) Insert Note 3) Update Note 4) Delete Note 5) Exit");
+                var choice = ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        ReadAllNotes();
+                        break;
+                    case "2":
+                        InsertNote();
+                        break;
+                    case "3":
+                        UpdateNote();
+                        break;
+                    case "4":
+                        DeleteNoteWithConfirmation();
+                        break;
+                    case "5":
+                        return;
+                    default:
+                        WriteLine("Invalid choice. Please try again.");
+                        break;
+                }
+            }
+        }
+
+        try
+        {
+            InternalWork();
+        }
+        catch (SqlException exception)
+        {
+            WriteLine("An error occurred while executing the database operation. {0}", exception);
+        }
+        catch (Exception e)
+        {
+            WriteLine("An error occurred while executing the operation. {0}", e);
+            throw;
+        }
+    }
+
+    private void ReadAllNotes()
     {
         foreach (var note in database.ReadAllNotes())
         {
-            Console.WriteLine($"Id: {note.Id}, Note: {note.Note}, Expiring Date: {note.Inserted}");
+            WriteLine($"Id: {note.Id}, Note: {note.Note}, Expiring Date: {note.Inserted}");
         }
     }
 
-    public void InsertNote()
+    private void InsertNote()
     {
-        Console.Write("Enter note: ");
-        var note = Console.ReadLine();
+        Write("Enter note: ");
+        var note = ReadLine();
+        
+        if (string.IsNullOrEmpty(note))
+        {
+            WriteLine("Note cannot be noll or empty.");
+            return;
+        }
+        
         database.InsertNote(note);
-        Console.WriteLine("Note inserted successfully.");
+        WriteLine("Note inserted successfully.");
     }
 
-    public void UpdateNote()
+    private void UpdateNote()
     {
-        Console.Write("Enter note Id to update: ");
-        if (int.TryParse(Console.ReadLine(), out var id))
+        Write("Enter note Id to update: ");
+        if (int.TryParse(ReadLine(), out var id))
         {
-            Console.Write("Enter new note: ");
-            var note = Console.ReadLine();
+            Write("Enter new note: ");
+            
+            var note = ReadLine();
+            if (string.IsNullOrEmpty(note))
+            {
+                WriteLine("Note cannot be noll or empty.");
+                return;
+            }
+            
             database.UpdateNote(id, note);
-            Console.WriteLine("Note updated successfully.");
+            WriteLine("Note updated successfully.");
         }
         else
         {
-            Console.WriteLine("Invalid Id. Please enter a valid integer.");
+            WriteLine("Invalid Id. Please enter a valid integer.");
         }
     }
 
-    public void DeleteNoteWithConfirmation()
+    private void DeleteNoteWithConfirmation()
     {
-        Console.Write("Enter note Id to delete: ");
-        if (int.TryParse(Console.ReadLine(), out var id))
+        Write("Enter note Id to delete: ");
+        if (int.TryParse(ReadLine(), out var id))
         {
-            Console.Write("Are you sure you want to delete this note? (yes/no): ");
-            var confirmation = Console.ReadLine();
+            Write("Are you sure you want to delete this note? (yes/no): ");
+            var confirmation = ReadLine();
 
             if (confirmation?.ToLower() == "yes")
             {
                 database.DeleteNoteWithConfirmation(id);
-                Console.WriteLine("Note deleted successfully.");
+                WriteLine("Note deleted successfully.");
             }
             else
             {
-                Console.WriteLine("Deletion cancelled.");
+                WriteLine("Deletion cancelled.");
             }
         }
         else
         {
-            Console.WriteLine("Invalid Id. Please enter a valid integer.");
+            WriteLine("Invalid Id. Please enter a valid integer.");
         }
     }
 
