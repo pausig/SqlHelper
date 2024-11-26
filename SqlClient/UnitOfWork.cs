@@ -28,7 +28,8 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
         {
             while (true)
             {
-                WriteLine("Choose an operation: 1) Read All 2) Insert Note 3) Update Note 4) Delete Note 5) Exit");
+                WriteLine(
+                    "Choose an operation: 1) Read All 2) Insert Note 3) Update Note 4)  massive insert 5  ) Delete Note 6) Exit");
                 var choice = ReadLine();
 
                 switch (choice)
@@ -46,6 +47,9 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
                         Delete();
                         break;
                     case "5":
+                        MassiveInsert();
+                        break;
+                    case "6":
                         return;
                     default:
                         WriteLine("Invalid choice. Please try again.");
@@ -57,7 +61,8 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
 
     private void Read()
     {
-        foreach (var note in database.Read()) WriteLine($"Id: {note.Id}, Note: {note.Note}, Expiring Date: {note.Inserted}");
+        foreach (var note in database.Read())
+            WriteLine($"Id: {note.Id}, Note: {note.Note}, Expiring Date: {note.Inserted}");
     }
 
     private void Insert()
@@ -73,6 +78,16 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
 
         database.Insert(note);
         WriteLine("Note inserted successfully.");
+    }
+
+    private void MassiveInsert()
+    {
+        Write("Enter notes separated by , or ; : ");
+        var notes = ReadLine();
+       
+        database.MassiveInsert(notes?.Split([',',';'],StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) ?? []);
+        
+        WriteLine("Notes inserted successfully.");
     }
 
     private void Update()
@@ -121,7 +136,7 @@ public class UnitOfWork(IDatabase database) : IDisposable, IAsyncDisposable
             WriteLine("Invalid Id. Please enter a valid integer.");
         }
     }
-    
+
     public async ValueTask DisposeAsync() => await database.DisposeAsync();
 
     public void Dispose() => database.Dispose();
