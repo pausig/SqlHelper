@@ -1,9 +1,8 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using SqlClient;
+using SqlClient.SeedWork;
 
 const string connectionString = "Server=(localdb)\\mssqllocaldb;Database=ToDoList;Integrated Security=True;TrustServerCertificate=True";
-
-using var connection = new SqlConnection(connectionString);
-connection.Open();
+IDatabase database = new Database(connectionString);
 
 while (true)
 {
@@ -13,16 +12,16 @@ while (true)
     switch (choice)
     {
         case "1":
-            ReadAllNotes(connection);
+            ReadAllNotes();
             break;
         case "2":
-            InsertNote(connection);
+            InsertNote();
             break;
         case "3":
-            UpdateNote(connection);
+            UpdateNote();
             break;
         case "4":
-            DeleteNoteWithConfirmation(connection);
+            DeleteNoteWithConfirmation();
             break;
         case "5":
             return;
@@ -32,44 +31,30 @@ while (true)
     }
 }
 
-void ReadAllNotes(SqlConnection connection)
+void ReadAllNotes()
 {
-    const string query = "SELECT Id, Note, Inserted FROM Notes";
-    using var command = new SqlCommand(query, connection);
-    using var reader = command.ExecuteReader();
-    while (reader.Read())
+    foreach (var note in database.ReadAllNotes())
     {
-        Console.WriteLine($"Id: {reader["Id"]}, Note: {reader["Note"]}, Expiring Date: {reader["Inserted"]}");
+        Console.WriteLine($"Id: {note.Id}, Note: {note.Note}, Expiring Date: {note.Inserted}");
     }
 }
 
-void InsertNote(SqlConnection connection)
+void InsertNote()
 {
     Console.Write("Enter note: ");
     var note = Console.ReadLine();
-
-    const string query = "INSERT INTO Notes (Note, Inserted) VALUES (@Note, @Inserted)";
-    using var command = new SqlCommand(query, connection);
-    command.Parameters.AddWithValue("@Note", note);
-    command.Parameters.AddWithValue("@Inserted", DateTimeOffset.Now);
-    command.ExecuteNonQuery();
+    database.InsertNote(note);
     Console.WriteLine("Note inserted successfully.");
 }
 
-void UpdateNote(SqlConnection connection)
+void UpdateNote()
 {
     Console.Write("Enter note Id to update: ");
     if (int.TryParse(Console.ReadLine(), out var id))
     {
-        // Use the parsed integer id
         Console.Write("Enter new note: ");
         var note = Console.ReadLine();
-
-        const string query = "UPDATE Notes SET Note = @Note WHERE Id = @Id";
-        using var command = new SqlCommand(query, connection);
-        command.Parameters.AddWithValue("@Id", id);
-        command.Parameters.AddWithValue("@Note", note);
-        command.ExecuteNonQuery();
+        database.UpdateNote(id, note);
         Console.WriteLine("Note updated successfully.");
     }
     else
@@ -78,7 +63,7 @@ void UpdateNote(SqlConnection connection)
     }
 }
 
-void DeleteNoteWithConfirmation(SqlConnection connection)
+void DeleteNoteWithConfirmation()
 {
     Console.Write("Enter note Id to delete: ");
     if (int.TryParse(Console.ReadLine(), out var id))
@@ -88,10 +73,7 @@ void DeleteNoteWithConfirmation(SqlConnection connection)
 
         if (confirmation?.ToLower() == "yes")
         {
-            const string query = "DELETE FROM Notes WHERE Id = @Id";
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@Id", id);
-            command.ExecuteNonQuery();
+            database.DeleteNoteWithConfirmation(id);
             Console.WriteLine("Note deleted successfully.");
         }
         else
